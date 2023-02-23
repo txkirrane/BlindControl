@@ -13,7 +13,7 @@
 /* *** PROJECT SETTINGS *** */
 
 // WiFi related settings
-#define AP_NAME "dd-wrt"
+#define AP_NAME ""
 #define AP_PSK ""
 
 // 
@@ -22,9 +22,13 @@
 
 // TimeClient related settings
 #define TIME_OFFSET -5
+//#define TIME_OFFSET -4 // UNCOMMENT DURING DAYLIGHT SAVINGS
 
 // LED pin for status
 #define LED_PIN 4
+
+#define OPEN_PIN 1
+#define CLOSE_PIN 2
 
 // Runtime settings
 
@@ -92,12 +96,26 @@ TimeData getCurrentTime(){
 /* *** ACTUATION CODE *** */
 
 class CustomizedBlinds : public Blinds {
+  private:
+    bool isClosed = false;
   public:
     void open() {
-      Serial.println("Blinds are open!");
+      if(isClosed){
+        digitalWrite(OPEN_PIN, HIGH);
+        delay(100);
+        digitalWrite(OPEN_PIN, LOW);
+
+        this->isClosed = false;
+      }
     }
     void close() {
-      Serial.println("Blinds are closed!");
+      if(!isClosed){
+        digitalWrite(CLOSE_PIN, HIGH);
+        delay(100);
+        digitalWrite(CLOSE_PIN, LOW);
+
+        this->isClosed = true;
+      }
     }
 };
 
@@ -112,14 +130,14 @@ void configureSchedule(){
 
   schedule.addEntry(
     ScheduleEntry(
-      TimeData(13, 15),
+      TimeData(5, 30),
       OPEN
     )
   );
 
   schedule.addEntry(
     ScheduleEntry(
-      TimeData(13, 16),
+      TimeData(20, 30),
       CLOSED
     )
   );
@@ -129,7 +147,11 @@ void configureSchedule(){
 void setup() {
 
   Serial.begin(115200);
-  pinMode (4, OUTPUT);
+
+  // Set pinModes
+  pinMode (LED_PIN, OUTPUT);
+  pinMode (OPEN_PIN, OUTPUT);
+  pinMode (CLOSE_PIN, OUTPUT);
 
   // Setup methods
   setupWiFi();
